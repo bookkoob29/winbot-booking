@@ -545,8 +545,9 @@ def mark_telegram_sent(log_id):
     conn = get_conn()
     try:
         now = _now_str()
+        sent_val = "TRUE" if USE_POSTGRES else "1"
         _execute(conn,
-            "UPDATE activity_logs SET telegram_sent=1, telegram_sent_at=? WHERE id=?",
+            f"UPDATE activity_logs SET telegram_sent={sent_val}, telegram_sent_at=? WHERE id=?",
             (now, log_id))
         conn.commit()
     finally:
@@ -556,9 +557,10 @@ def mark_telegram_sent(log_id):
 def get_failed_notifications(limit=50):
     conn = get_conn()
     try:
+        unsent_val = "FALSE" if USE_POSTGRES else "0"
         cursor = _execute(conn,
-            """SELECT * FROM activity_logs
-               WHERE telegram_sent = 0 AND activity_type != 'SYSTEM'
+            f"""SELECT * FROM activity_logs
+               WHERE telegram_sent = {unsent_val} AND activity_type != 'SYSTEM'
                ORDER BY created_at DESC LIMIT ?""", (limit,))
         return _fetchall(cursor)
     finally:
