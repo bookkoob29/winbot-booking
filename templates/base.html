@@ -6,7 +6,6 @@
     <title>{% block title %}เช่าเครื่องเช็ดกระจกคอนโด{% endblock %} | WINBOT Mini 2</title>
     <script src="https://cdn.tailwindcss.com">
     </script>
-    <script src="/static/i18n.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
         * { font-family: 'Prompt', 'Sarabun', sans-serif; }
@@ -49,47 +48,6 @@
     <div id="toast-container" class="toast"></div>
 
     <script>
-        // i18n setup
-        let currentLang = localStorage.getItem('winbot_lang') || 'th';
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('winbot_lang', lang);
-            document.documentElement.lang = lang === 'th' ? 'th' : lang === 'en' ? 'en' : 'zh';
-            // Update all data-i18n elements
-            document.querySelectorAll('[data-i18n]').forEach(function(el) {
-                const key = el.getAttribute('data-i18n');
-                if (I18N[currentLang] && I18N[currentLang][key]) {
-                    el.textContent = I18N[currentLang][key];
-                }
-            });
-            // Update all data-i18n-placeholder elements
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
-                const key = el.getAttribute('data-i18n-placeholder');
-                if (I18N[currentLang] && I18N[currentLang][key]) {
-                    el.placeholder = I18N[currentLang][key];
-                }
-            });
-            // Update all data-i18n-value elements
-            document.querySelectorAll('[data-i18n-value]').forEach(function(el) {
-                const key = el.getAttribute('data-i18n-value');
-                if (I18N[currentLang] && I18N[currentLang][key]) {
-                    el.value = I18N[currentLang][key];
-                }
-            });
-            // Update lang switch button text
-            document.querySelectorAll('.lang-btn').forEach(function(btn) {
-                const lang = btn.getAttribute('data-lang');
-                if (lang === currentLang) {
-                    btn.classList.add('font-bold', 'text-blue-600');
-                    btn.classList.remove('text-gray-500');
-                } else {
-                    btn.classList.remove('font-bold', 'text-blue-600');
-                    btn.classList.add('text-gray-500');
-                }
-            });
-        }
-
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast-container');
             toast.textContent = message;
@@ -97,11 +55,6 @@
             setTimeout(() => toast.classList.add('show'), 50);
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
-
-        // Initialize language on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            setLanguage(currentLang);
-        });
     </script>
     {% block scripts %}{% endblock %}
 </body>

@@ -6,22 +6,16 @@
 <nav class="bg-white shadow-sm border-b">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
         <a href="/" class="text-blue-600 font-bold text-lg">WINBOT เช็ดกระจก</a>
-        <div class="flex gap-3 text-sm items-center">
-            <a href="/" class="text-gray-600 hover:text-blue-600" data-i18n="nav_home">หน้าแรก</a>
-            <a href="/availability" class="text-blue-600 font-medium" data-i18n="nav_book">จอง</a>
-            <div class="ml-2 border-l pl-3 flex gap-1 text-xs items-center">
-                <span class="text-gray-400" data-i18n="nav_lang">ภาษา</span>
-                <button onclick="setLanguage('th')" class="lang-btn px-1.5 py-0.5 rounded font-bold text-blue-600" data-lang="th">TH</button>
-                <button onclick="setLanguage('en')" class="lang-btn px-1.5 py-0.5 rounded text-gray-500 hover:text-gray-700" data-lang="en">EN</button>
-                <button onclick="setLanguage('zh')" class="lang-btn px-1.5 py-0.5 rounded text-gray-500 hover:text-gray-700" data-lang="zh">中文</button>
-            </div>
+        <div class="flex gap-3 text-sm">
+            <a href="/" class="text-gray-600 hover:text-blue-600">หน้าแรก</a>
+            <a href="/availability" class="text-blue-600 font-medium">จอง</a>
         </div>
     </div>
 </nav>
 
 <div class="max-w-4xl mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-2">เลือกวันและเวลา</h1>
-    <p class="text-gray-500 mb-6">data-i18n="avail_subtitle">เลือกรอบที่คุณสะดวก ราคา <strong class="text-blue-600">500 บาท / 3 ชั่วโมง</strong></p>
+    <p class="text-gray-500 mb-6">เลือกรอบที่คุณสะดวก ราคา <strong class="text-blue-600">500 บาท / 3 ชั่วโมง</strong></p>
 
     <!-- Week navigation -->
     <div class="flex items-center justify-between mb-4 gap-2">
@@ -47,7 +41,7 @@
     <div class="text-center mb-4">
         <button id="quick-book-btn" onclick="quickBookEarliest()"
                 class="inline-block bg-green-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 transition-all text-sm shadow-sm">
-            data-i18n="quick_book">⚡ จองด่วนที่สุด
+            ⚡ จองด่วนที่สุด
         </button>
         <p class="text-xs text-gray-400 mt-1">ค้นหาวันและเวลาที่ว่างเร็วที่สุดให้อัตโนมัติ</p>
     </div>
@@ -72,12 +66,12 @@
         <div class="mb-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-xs text-blue-600 font-medium"data-i18n="modal_slot">ช่วงเวลาที่เลือก</div>
+                    <div class="text-xs text-blue-600 font-medium">ช่วงเวลาที่เลือก</div>
                     <div class="text-lg font-bold text-blue-800 mt-0.5"><span id="modal-date-display"></span></div>
                     <div class="text-base font-semibold text-blue-700"><span id="modal-slot-display"></span></div>
                 </div>
                 <div class="text-right">
-                    <div class="text-xs text-blue-600"data-i18n="modal_price">ค่าเช่า</div>
+                    <div class="text-xs text-blue-600">ค่าเช่า</div>
                     <div class="text-2xl font-bold text-blue-800">500</div>
                     <div class="text-xs text-blue-600">บาท</div>
                 </div>
@@ -92,26 +86,26 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้จอง *</label>
                 <input type="text" id="input-name" name="customer_name" required
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                       placeholder="ชื่อ-นามสกุล" data-i18n-placeholder="modal_name" minlength="2" maxlength="100">
+                       placeholder="ชื่อ-นามสกุล" minlength="2" maxlength="100">
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium text-gray-700 mb-1">เบอร์โทรศัพท์ *</label>
                 <input type="tel" id="input-phone" name="phone" required
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                       placeholder="08x-xxx-xxxx" data-i18n-placeholder="modal_phone" pattern="0[0-9]{8,9}">
+                       placeholder="08x-xxx-xxxx" pattern="0[0-9]{8,9}">
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Line ID</label>
                 <input type="text" id="input-line" name="line_id"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                       placeholder="@lineid (ถ้ามี)" data-i18n-placeholder="modal_line">
+                       placeholder="@lineid (ถ้ามี)">
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อคอนโด / โครงการ</label>
                 <div class="relative" id="condo-search-wrapper">
                     <input type="text" id="input-condo-search" autocomplete="off"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                           placeholder="พิมพ์ชื่อคอนโดเพื่อค้นหา..." data-i18n-placeholder="modal_condo">
+                           placeholder="พิมพ์ชื่อคอนโดเพื่อค้นหา...">
                     <input type="hidden" id="input-condo-name" name="condo_name">
                     <div id="condo-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden"></div>
                 </div>
@@ -128,7 +122,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
                 <textarea id="input-note" name="note" rows="2" maxlength="500"
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                          placeholder="เช่น ต้องการรับเครื่องช่วงเช้า" data-i18n-placeholder="modal_note"></textarea>
+                          placeholder="เช่น ต้องการรับเครื่องช่วงเช้า"></textarea>
             </div>
             <button type="submit" id="submit-btn"
                     class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50">
@@ -280,11 +274,7 @@ async function loadCalendar() {
                     block.innerHTML = '<div class="font-bold py-2">' + hourStr + '</div>'
                         + '<div class="text-[10px] pb-1.5">ปิด</div>';
                 } else if (isSlotTaken) {
-                    // Use status-appropriate colors from API
-                    var bgColor = slot.color || '#64748B';
-                    var textColor = slot.text_color || '#FFFFFF';
-                    block.setAttribute('style', 'background:' + bgColor + '; color:' + textColor + ';');
-                    block.className += ' rounded-lg text-center transition-all border text-xs cursor-default';
+                    block.className += ' border-gray-200 text-gray-500 bg-gray-100 cursor-default';
                     block.innerHTML = '<div class="font-bold py-2">' + hourStr + '</div>'
                         + '<div class="text-[10px] pb-1.5">' + (slot.label || 'ไม่ว่าง') + '</div>';
                 }
