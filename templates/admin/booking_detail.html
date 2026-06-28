@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Booking Detail | WINBOT{% endblock %}
+{% block content %}
+<nav class="bg-white shadow-sm border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <span class="font-bold text-gray-800">⚙️ Booking Detail</span>
+        <a href="/admin/dashboard" class="text-blue-600 text-sm hover:text-blue-800">← กลับ Dashboard</a>
+    </div>
+</nav>
+
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Booking info -->
+        <div class="md:col-span-2 bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">{{ booking.booking_code }}</h1>
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold mt-1"
+                          style="background:{{ STATUS_COLORS.get(booking.status, '#DBEAFE') }}; color:{{ STATUS_TEXT_COLORS.get(booking.status, '#1E40AF') }}">
+                        {{ STATUS_LABELS.get(booking.status, booking.status) }}
+                    </span>
+                </div>
+                <span class="text-gray-400 text-xs">{{ booking.created_at }}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 text-sm border-t pt-4">
+                <div><span class="text-gray-500">วันที่</span><div class="font-medium">{{ booking.booking_date }}</div></div>
+                <div><span class="text-gray-500">เวลา</span><div class="font-medium">{{ booking.slot_start }}–{{ booking.slot_end }}</div></div>
+                <div><span class="text-gray-500">ชื่อผู้จอง</span><div class="font-medium">{{ booking.customer_name }}</div></div>
+                <div><span class="text-gray-500">เบอร์โทร</span><div class="font-medium">{{ booking.phone }}</div></div>
+                <div><span class="text-gray-500">Line ID</span><div class="font-medium">{{ booking.line_id or '-' }}</div></div>
+                <div><span class="text-gray-500">คอนโด</span><div class="font-medium">{{ booking.condo_name or '-' }}</div></div>
+                {% if booking.condo_map_link %}
+                <div><span class="text-gray-500">Google Maps</span><div class="font-medium"><a href="{{ booking.condo_map_link }}" target="_blank" class="text-blue-600 hover:underline text-xs">เปิดแผนที่ ↗</a></div></div>
+                {% endif %}
+                <div><span class="text-gray-500">หมายเหตุ</span><div class="font-medium">{{ booking.note or '-' }}</div></div>
+            </div>
+
+            <!-- Internal note -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                <label class="text-sm font-medium text-gray-700">หมายเหตุภายใน</label>
+                <div id="internal-note-display" class="text-sm text-gray-600 mt-1">{{ booking.internal_note or 'ไม่มีหมายเหตุ' }}</div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-6 border-t pt-4">
+                <h3 class="font-bold text-gray-700 mb-3">จัดการสถานะ</h3>
+                <form id="status-form" onsubmit="changeStatus(event)" class="space-y-3">
+                    {% if allowed_transitions %}
+                    <select id="status-select" class="w-full px-3 py-2 border rounded-lg text-sm">
+                        {% for t in allowed_transitions %}
+                        <option value="{{ t }}">→ {{ STATUS_LABELS.get(t, t) }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" id="internal-note-input" placeholder="หมายเหตุภายใน (ถ้ามี)"
+                           class="w-full px-3 py-2 border rounded-lg text-sm">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-all text-sm">
+                        ดำเนินการ
+                    </button>
+                    {% else %}
+                    <p class="text-gray-400 text-sm">ไม่สามารถเปลี่ยนสถานะจากสถานะปัจจุบันได้</p>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Edit customer info -->
+            <div class="mt-6 border-t pt-4">
+                <h3 class="font-bold text-gray-700 mb-3">✏️ แก้ไขข้อมูลลูกค้า</h3>
+                <form id="edit-form" onsubmit="editBooking(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <input type="text" id="edit-name" value="{{ booking.customer_name }}"
+                               class="px-3 py-2 border rounded-lg text-sm">
+                        <input type="text" id="edit-phone" value="{{ booking.phone }}"
+                               class="px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <input type="text" id="edit-line" value="{{ booking.line_id or '' }}" placeholder="Line ID"
+                           class="w-full px-3 py-2 border rounded-lg text-sm mb-3">
+                    <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm transition-all">
+                        บันทึกการแก้ไข
+                    </button>
+                </form>
+                <div id="edit-message" class="text-sm mt-2"></div>
+            </div>
+        </div>
+
+        <!-- Slip preview -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="font-bold text-gray-700 mb-3">📎 สลิปที่แนบ</h3>
+            {% if slips %}
+            <div class="space-y-3">
+                {% for slip in slips %}
+                <div class="border rounded-lg p-2">
+                    <div class="text-xs text-gray-500 mb-1">{{ slip.original_name }} ({{ (slip.filesize / 1024)|round(1) }} KB)</div>
+                    <img src="/uploads/{{ slip.filename }}" alt="Slip" class="w-full rounded border" style="max-height:300px; object-fit: contain;">
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400 text-sm">ยังไม่มีสลิป</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Activity Logs -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
+        <h3 class="font-bold text-gray-700 mb-3">📋 Activity Log</h3>
+        {% if logs %}
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+            {% for log in logs %}
+            <div class="flex items-start gap-3 text-sm p-2 {% if not log.telegram_sent %}bg-red-50 rounded{% endif %}">
+                <div class="text-gray-400 text-xs whitespace-nowrap w-16">{{ log.created_at[:10] if log.created_at else '' }}<br>{{ log.created_at[11:19] if log.created_at else '' }}</div>
+                <div class="flex-1">
+                    <span class="font-medium">{{ log.activity_type }}</span>
+                    <span class="text-gray-500"> - {{ log.actor_name }}</span>
+                    <div class="text-gray-400 text-xs">{{ log.message }}</div>
+                </div>
+                <div>
+                    {% if log.telegram_sent %}
+                    <span class="text-green-600 text-xs">✅ Telegram</span>
+                    {% else %}
+                    <span class="text-red-500 text-xs">❌ No Telegram</span>
+                    <button onclick="resendTelegram('{{ log.id }}')" class="text-xs text-blue-600 hover:text-blue-800 ml-1">ส่งอีกครั้ง</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm">ไม่มี Activity Log</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function changeStatus(event) {
+    event.preventDefault();
+    const status = document.getElementById('status-select').value;
+    const note = document.getElementById('internal-note-input').value;
+
+    const resp = await fetch('/admin/api/bookings/{{ booking.id }}/status', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status: status, internal_note: note}),
+    });
+
+    if (resp.ok) {
+        showToast('✅ อัปเดตสถานะสำเร็จ', 'success');
+        setTimeout(function() { location.reload(); }, 1000);
+    } else {
+        const err = await resp.json();
+        showToast('❌ ' + (err.detail || 'เกิดข้อผิดพลาด'), 'error');
+    }
+}
+
+async function editBooking(event) {
+    event.preventDefault();
+    const data = {
+        customer_name: document.getElementById('edit-name').value,
+        phone: document.getElementById('edit-phone').value,
+        line_id: document.getElementById('edit-line').value,
+    };
+
+    const resp = await fetch('/admin/api/bookings/{{ booking.id }}', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+
+    const msg = document.getElementById('edit-message');
+    if (resp.ok) {
+        msg.textContent = '✅ บันทึกสำเร็จ';
+        msg.className = 'text-sm mt-2 text-green-600';
+        setTimeout(function() { location.reload(); }, 1000);
+    } else {
+        const err = await resp.json();
+        msg.textContent = '❌ ' + (err.detail || 'เกิดข้อผิดพลาด');
+        msg.className = 'text-sm mt-2 text-red-500';
+    }
+}
+
+async function resendTelegram(logId) {
+    const resp = await fetch('/admin/api/telegram/resend/' + logId, {method: 'POST'});
+    if (resp.ok) {
+        showToast('✅ ส่ง Telegram สำเร็จ', 'success');
+        setTimeout(function() { location.reload(); }, 1000);
+    } else {
+        showToast('❌ ส่งไม่สำเร็จ', 'error');
+    }
+}
+</script>
+{% endblock %}

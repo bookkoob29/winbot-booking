@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard | WINBOT{% endblock %}
+{% block content %}
+<nav class="bg-white shadow-sm border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <span class="font-bold text-gray-800">⚙️ Admin Dashboard</span>
+        <div class="flex gap-4 text-sm">
+            <a href="/admin/activity-logs" class="text-gray-600 hover:text-blue-600">Activity Logs</a>
+            <a href="/admin/export/csv" class="text-gray-600 hover:text-blue-600">Export CSV</a>
+            <a href="/admin/logout" class="text-red-600 hover:text-red-800">ออกจากระบบ</a>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+            <div class="text-2xl font-bold text-gray-800">{{ today_bookings|selectattr('status', 'equalto', 'CONFIRMED_PAID')|list|length }}</div>
+            <div class="text-gray-500 text-sm">วันนี้ (จองแล้ว)</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-amber-500">
+            <div class="text-2xl font-bold text-gray-800">{{ pending_bookings|length }}</div>
+            <div class="text-gray-500 text-sm">รอ Confirm ทั้งหมด</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-slate-500">
+            <div class="text-2xl font-bold text-gray-800">{{ unpaid_bookings|length }}</div>
+            <div class="text-gray-500 text-sm">รอชำระเงิน</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
+            <div class="text-2xl font-bold text-gray-800">{{ all_bookings|length }}</div>
+            <div class="text-gray-500 text-sm">รายการทั้งหมด</div>
+        </div>
+    </div>
+
+    <!-- Today's bookings -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="px-6 py-4 border-b">
+            <h2 class="font-bold text-gray-800">📅 วันนี้ ({{ today }})</h2>
+        </div>
+        {% if today_bookings %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="bg-gray-50">
+                    <th class="p-3 text-left">เวลา</th>
+                    <th class="p-3 text-left">ชื่อ</th>
+                    <th class="p-3 text-left">เบอร์</th>
+                    <th class="p-3 text-left">สถานะ</th>
+                    <th class="p-3 text-left">จัดการ</th>
+                </tr></thead>
+                <tbody>
+                {% for b in today_bookings %}
+                <tr class="border-t hover:bg-gray-50">
+                    <td class="p-3">{{ b.slot_start }}–{{ b.slot_end }}</td>
+                    <td class="p-3 font-medium">{{ b.customer_name }}</td>
+                    <td class="p-3">{{ b.phone }}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold" style="background:{{ STATUS_COLORS.get(b.status, '#DBEAFE') }}; color:{{ STATUS_TEXT_COLORS.get(b.status, '#1E40AF') }}">
+                            {{ STATUS_LABELS.get(b.status, b.status) }}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <a href="/admin/bookings/{{ b.id }}" class="text-blue-600 hover:text-blue-800 text-xs">ดูรายละเอียด →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-6 text-center text-gray-400">ไม่มีรายการจองวันนี้</div>
+        {% endif %}
+    </div>
+
+    <!-- Pending confirmations (most important) -->
+    {% if pending_bookings %}
+    <div class="bg-white rounded-xl shadow-sm mb-6 border-2 border-amber-200">
+        <div class="px-6 py-4 border-b bg-amber-50">
+            <h2 class="font-bold text-amber-800">⚠️ รอตรวจสอบสลิป</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="bg-gray-50">
+                    <th class="p-3 text-left">รหัส</th>
+                    <th class="p-3 text-left">วันที่</th>
+                    <th class="p-3 text-left">เวลา</th>
+                    <th class="p-3 text-left">ชื่อ</th>
+                    <th class="p-3 text-left">เบอร์</th>
+                    <th class="p-3 text-left">จัดการ</th>
+                </tr></thead>
+                <tbody>
+                {% for b in pending_bookings %}
+                <tr class="border-t hover:bg-amber-50">
+                    <td class="p-3 font-mono text-xs">{{ b.booking_code }}</td>
+                    <td class="p-3">{{ b.booking_date }}</td>
+                    <td class="p-3">{{ b.slot_start }}–{{ b.slot_end }}</td>
+                    <td class="p-3">{{ b.customer_name }}</td>
+                    <td class="p-3">{{ b.phone }}</td>
+                    <td class="p-3">
+                        <a href="/admin/bookings/{{ b.id }}" class="text-amber-600 hover:text-amber-800 text-xs font-medium">ตรวจสอบ →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- All Bookings -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="px-6 py-4 border-b flex items-center justify-between">
+            <h2 class="font-bold text-gray-800">📋 รายการจองทั้งหมด</h2>
+            <div class="flex gap-2">
+                <a href="/admin/export/csv" class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-medium hover:bg-green-200">Export CSV</a>
+            </div>
+        </div>
+        {% if all_bookings %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="bg-gray-50">
+                    <th class="p-3 text-left">รหัส</th>
+                    <th class="p-3 text-left">วันที่</th>
+                    <th class="p-3 text-left">เวลา</th>
+                    <th class="p-3 text-left">ชื่อ</th>
+                    <th class="p-3 text-left">เบอร์</th>
+                    <th class="p-3 text-left">สถานะ</th>
+                    <th class="p-3 text-left">จัดการ</th>
+                </tr></thead>
+                <tbody>
+                {% for b in all_bookings %}
+                <tr class="border-t hover:bg-gray-50">
+                    <td class="p-3 font-mono text-xs">{{ b.booking_code }}</td>
+                    <td class="p-3">{{ b.booking_date }}</td>
+                    <td class="p-3">{{ b.slot_start }}–{{ b.slot_end }}</td>
+                    <td class="p-3">{{ b.customer_name }}</td>
+                    <td class="p-3">{{ b.phone }}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold" style="background:{{ STATUS_COLORS.get(b.status, '#DBEAFE') }}; color:{{ STATUS_TEXT_COLORS.get(b.status, '#1E40AF') }}">
+                            {{ STATUS_LABELS.get(b.status, b.status) }}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <a href="/admin/bookings/{{ b.id }}" class="text-blue-600 hover:text-blue-800 text-xs">ดู →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-6 text-center text-gray-400">ยังไม่มีรายการจอง</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

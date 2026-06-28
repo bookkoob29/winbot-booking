@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Activity Logs | WINBOT{% endblock %}
+{% block content %}
+<nav class="bg-white shadow-sm border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <span class="font-bold text-gray-800">📋 Activity Logs</span>
+        <a href="/admin/dashboard" class="text-blue-600 text-sm hover:text-blue-800">← กลับ Dashboard</a>
+    </div>
+</nav>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+    <!-- Failed notifications alert -->
+    {% if failed_logs %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <h3 class="font-bold text-red-700 mb-2">⚠️ Telegram Notification ล้มเหลว ({{ failed_logs|length }} รายการ)</h3>
+        <div class="space-y-1">
+            {% for f in failed_logs %}
+            <div class="text-sm text-red-600 flex items-center justify-between">
+                <span>{{ f.created_at }} — {{ f.activity_type }} — {{ f.booking_code }} — {{ f.message[:50] }}</span>
+                <button onclick="resendTelegram('{{ f.id }}')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">ส่งใหม่</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="px-6 py-4 border-b">
+            <h2 class="font-bold text-gray-800">Activity Logs ล่าสุด</h2>
+        </div>
+        {% if logs %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="bg-gray-50">
+                    <th class="p-3 text-left">เวลา</th>
+                    <th class="p-3 text-left">Booking</th>
+                    <th class="p-3 text-left">Type</th>
+                    <th class="p-3 text-left">Actor</th>
+                    <th class="p-3 text-left">Message</th>
+                    <th class="p-3 text-left">Telegram</th>
+                </tr></thead>
+                <tbody>
+                {% for log in logs %}
+                <tr class="border-t hover:bg-gray-50 {% if not log.telegram_sent %}bg-red-50{% endif %}">
+                    <td class="p-3 text-xs text-gray-500">{{ log.created_at }}</td>
+                    <td class="p-3 font-mono text-xs">{{ log.booking_code or '-' }}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-gray-100">{{ log.activity_type }}</span></td>
+                    <td class="p-3">{{ log.actor_name or '-' }}</td>
+                    <td class="p-3 text-gray-600 max-w-xs truncate">{{ log.message }}</td>
+                    <td class="p-3">
+                        {% if log.telegram_sent %}
+                        <span class="text-green-600 text-xs">✅</span>
+                        {% else %}
+                        <span class="text-red-500 text-xs">❌</span>
+                        <button onclick="resendTelegram('{{ log.id }}')" class="ml-1 text-blue-600 text-xs hover:text-blue-800">ส่งใหม่</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-6 text-center text-gray-400">ไม่มี Activity Log</div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function resendTelegram(logId) {
+    const resp = await fetch('/admin/api/telegram/resend/' + logId, {method: 'POST'});
+    if (resp.ok) {
+        showToast('✅ ส่ง Telegram สำเร็จ', 'success');
+        setTimeout(function() { location.reload(); }, 1500);
+    } else {
+        showToast('❌ ส่งไม่สำเร็จ', 'error');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}เช่าเครื่องเช็ดกระจกคอนโด{% endblock %} | WINBOT Mini 2</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Prompt', 'Sarabun', sans-serif; }
+        .slot-available { background-color: #DBEAFE; color: #1E40AF; cursor: pointer; }
+        .slot-available:hover { background-color: #BFDBFE; }
+        .slot-reserved { background-color: #64748B; color: #FFFFFF; }
+        .slot-pending { background-color: #F59E0B; color: #FFFFFF; }
+        .slot-confirmed { background-color: #16A34A; color: #FFFFFF; }
+        .transition-all { transition: all 0.2s ease; }
+        /* Mobile improvements */
+        @media (max-width: 640px) {
+            .slot-btn { font-size: 0.75rem; padding: 0.5rem 0.25rem; }
+        }
+        /* Toast notification */
+        .toast {
+            position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;
+            padding: 1rem; border-radius: 0.5rem; color: white; font-weight: 500;
+            transform: translateY(150%); opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background-color: #16A34A; }
+        .toast.error { background-color: #DC2626; }
+        .toast.info { background-color: #2563EB; }
+        /* Modal overlay */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998;
+            display: none; align-items: center; justify-content: center; padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white; border-radius: 1rem; padding: 1.5rem;
+            max-width: 28rem; width: 100%; max-height: 90vh; overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    {% block content %}{% endblock %}
+
+    <div id="toast-container" class="toast"></div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast-container');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 50);
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

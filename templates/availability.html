@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% block title %}ดูเวลาว่าง | WINBOT{% endblock %}
+
+{% block content %}
+<!-- Navigation bar -->
+<nav class="bg-white shadow-sm border-b">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="/" class="text-blue-600 font-bold text-lg">WINBOT เช็ดกระจก</a>
+        <div class="flex gap-3 text-sm">
+            <a href="/" class="text-gray-600 hover:text-blue-600">หน้าแรก</a>
+            <a href="/availability" class="text-blue-600 font-medium">จอง</a>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">เลือกวันและเวลา</h1>
+    <p class="text-gray-500 mb-6">เลือกรอบที่คุณสะดวก ราคา <strong class="text-blue-600">500 บาท / 3 ชั่วโมง</strong></p>
+
+    <!-- Week navigation -->
+    <div class="flex items-center justify-between mb-4">
+        <button id="prev-week" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm transition-all">
+            ← สัปดาห์ก่อน
+        </button>
+        <span id="week-label" class="font-medium text-gray-700"></span>
+        <button id="next-week" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm transition-all">
+            สัปดาห์ถัดไป →
+        </button>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex flex-wrap gap-3 mb-6 text-xs">
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded" style="background:#DBEAFE"></span> ว่าง (จองได้)</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded" style="background:#DBEAFE; opacity:0.5"></span> ปิด (วันที่ผ่านมาแล้ว)</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded" style="background:#64748B"></span> ยังไม่ชำระ</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded" style="background:#F59E0B"></span> รอ Confirm</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded" style="background:#16A34A"></span> จองแล้ว</span>
+    </div>
+
+    <!-- Quick book -->
+    <div class="text-center mb-4">
+        <button id="quick-book-btn" onclick="quickBookEarliest()"
+                class="inline-block bg-green-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 transition-all text-sm shadow-sm">
+            ⚡ จองด่วนที่สุด
+        </button>
+        <p class="text-xs text-gray-400 mt-1">ค้นหาวันและเวลาที่ว่างเร็วที่สุดให้อัตโนมัติ</p>
+    </div>
+
+    <!-- Calendar -->
+    <div id="calendar" class="bg-white rounded-2xl shadow overflow-hidden">
+        <div id="calendar-loading" class="p-8 text-center text-gray-400">กำลังโหลด...</div>
+        <div id="calendar-days" class="divide-y divide-gray-100">
+            <!-- Each day rendered as a card by JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Booking Modal -->
+<div id="booking-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">กรอกรายละเอียด</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <!-- Selected slot summary -->
+        <div class="mb-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-blue-600 font-medium">ช่วงเวลาที่เลือก</div>
+                    <div class="text-lg font-bold text-blue-800 mt-0.5"><span id="modal-date-display"></span></div>
+                    <div class="text-base font-semibold text-blue-700"><span id="modal-slot-display"></span></div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-blue-600">ค่าเช่า</div>
+                    <div class="text-2xl font-bold text-blue-800">500</div>
+                    <div class="text-xs text-blue-600">บาท</div>
+                </div>
+            </div>
+        </div>
+        <form id="booking-form" onsubmit="submitBooking(event)">
+            <input type="hidden" id="input-booking-date" name="booking_date">
+            <input type="hidden" id="input-slot-start" name="slot_start">
+            <input type="hidden" id="input-slot-end" name="slot_end">
+
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้จอง *</label>
+                <input type="text" id="input-name" name="customer_name" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                       placeholder="ชื่อ-นามสกุล" minlength="2" maxlength="100">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">เบอร์โทรศัพท์ *</label>
+                <input type="tel" id="input-phone" name="phone" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                       placeholder="08x-xxx-xxxx" pattern="0[0-9]{8,9}">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Line ID</label>
+                <input type="text" id="input-line" name="line_id"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                       placeholder="@lineid (ถ้ามี)">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อคอนโด / โครงการ</label>
+                <div class="relative" id="condo-search-wrapper">
+                    <input type="text" id="input-condo-search" autocomplete="off"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                           placeholder="พิมพ์ชื่อคอนโดเพื่อค้นหา...">
+                    <input type="hidden" id="input-condo-name" name="condo_name">
+                    <div id="condo-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">พิมพ์ชื่อคอนโด ระบบจะแนะนำรายการที่ใกล้เคียง</p>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">ลิงก์ Google Maps</label>
+                <input type="url" id="input-condo-map" name="condo_map_link"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                       placeholder="https://maps.google.com/?q=...">
+                <p class="text-xs text-gray-400 mt-1">เลือกคอนโดจากรายการด้านบน หรือวางลิงก์ Google Maps ด้วยตนเอง</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                <textarea id="input-note" name="note" rows="2" maxlength="500"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                          placeholder="เช่น ต้องการรับเครื่องช่วงเช้า"></textarea>
+            </div>
+            <button type="submit" id="submit-btn"
+                    class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50">
+                ยืนยันการจอง
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Date helpers
+function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00+07:00');
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function formatDay(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00+07:00');
+    const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+    return days[d.getDay()];
+}
+
+function toDateStr(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+}
+
+let currentStart = new Date();
+currentStart.setDate(currentStart.getDate() - currentStart.getDay()); // Start of week
+
+function getWeekEnd(start) {
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return end;
+}
+
+function updateWeekLabel() {
+    const end = getWeekEnd(currentStart);
+    document.getElementById('week-label').textContent =
+        formatDate(toDateStr(currentStart)) + ' — ' + formatDate(toDateStr(end));
+}
+
+// Load calendar
+async function loadCalendar() {
+    const start = toDateStr(currentStart);
+    const end = toDateStr(getWeekEnd(currentStart));
+    const loading = document.getElementById('calendar-loading');
+    const container = document.getElementById('calendar-days');
+
+    loading.style.display = 'block';
+    container.innerHTML = '';
+
+    try {
+        const resp = await fetch('/api/availability?start_date=' + start + '&end_date=' + end);
+        const data = await resp.json();
+        loading.style.display = 'none';
+
+        data.dates.forEach(function(day) {
+            const isToday = day.date === '{{ today }}' ? true : false;
+            const dayName = formatDay(day.date);
+            const dateLabel = formatDate(day.date);
+
+            // Day card
+            const card = document.createElement('div');
+            card.className = 'p-4' + (isToday ? ' bg-blue-50' : '');
+
+            // Day header
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-3';
+            header.innerHTML = '<div><span class="text-xs text-gray-400">' + dayName + '</span>'
+                + '<span class="font-bold text-gray-800 ml-2">' + dateLabel + '</span>'
+                + (isToday ? '<span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">วันนี้</span>' : '')
+                + '</div>';
+            card.appendChild(header);
+
+            // Slots grid — 2 columns on mobile, 4 on desktop
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-2 md:grid-cols-4 gap-2';
+
+            day.slots.forEach(function(slot) {
+                const statusLabel = slot.label || slot.status;
+                let colorStyle = '';
+                let isBookable = slot.bookable;
+
+                if (slot.status === 'AVAILABLE') {
+                    colorStyle = 'background-color: #DBEAFE; color: #1E40AF;';
+                } else if (slot.status === 'RESERVED_UNPAID') {
+                    colorStyle = 'background-color: #64748B; color: white;';
+                } else if (slot.status === 'PAID_PENDING_CONFIRM') {
+                    colorStyle = 'background-color: #F59E0B; color: white;';
+                } else if (slot.status === 'CONFIRMED_PAID') {
+                    colorStyle = 'background-color: #16A34A; color: white;';
+                }
+
+                let btnClass = 'rounded-lg p-2 text-xs font-medium transition-all text-center border border-transparent';
+                if (isBookable) {
+                    btnClass += ' cursor-pointer hover:shadow hover:border-blue-300 hover:scale-105 active:scale-95';
+                } else if (slot.status === 'AVAILABLE') {
+                    btnClass += ' cursor-default opacity-50';
+                } else {
+                    btnClass += ' cursor-default opacity-80';
+                }
+
+                let slotContent = '<div class="font-semibold">' + statusLabel + '</div>'
+                    + '<div class="opacity-75 mt-0.5">' + slot.start + '–' + slot.end + '</div>';
+                
+                // Show "ปิด" for past/today available slots (read-only)
+                if (!isBookable && slot.status === 'AVAILABLE') {
+                    slotContent = '<div class="font-semibold">ปิด</div>'
+                        + '<div class="opacity-75 mt-0.5">' + slot.start + '–' + slot.end + '</div>';
+                }
+
+                let onclick = '';
+                if (isBookable) {
+                    onclick = 'onclick="openBookingModal(\'' + day.date + '\', \'' + slot.start + '\', \'' + slot.end + '\', \'' + slot.label + '\')"';
+                }
+
+                const slotDiv = document.createElement('div');
+                slotDiv.className = btnClass;
+                slotDiv.setAttribute('style', colorStyle);
+                if (isBookable) {
+                    var slotTimeLabel = slot.start + '\u2013' + slot.end;
+                    slotDiv.setAttribute('onclick', 'openBookingModal(\'' + day.date + '\', \'' + slot.start + '\', \'' + slot.end + '\', \'' + slotTimeLabel + '\')');
+                }
+                slotDiv.innerHTML = slotContent;
+                grid.appendChild(slotDiv);
+            });
+
+            card.appendChild(grid);
+            container.appendChild(card);
+        });
+    } catch (e) {
+        loading.textContent = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+        loading.style.display = 'block';
+    }
+}
+
+// Modal
+function openBookingModal(date, start, end, slotLabel) {
+    document.getElementById('modal-date-display').textContent = formatDate(date);
+    document.getElementById('modal-slot-display').textContent = slotLabel;
+    document.getElementById('input-booking-date').value = date;
+    document.getElementById('input-slot-start').value = start;
+    document.getElementById('input-slot-end').value = end;
+    document.getElementById('booking-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    document.getElementById('booking-modal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Close modal on overlay click
+document.getElementById('booking-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// Submit booking
+async function submitBooking(event) {
+    event.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'กำลังดำเนินการ...';
+
+    const data = {
+        booking_date: document.getElementById('input-booking-date').value,
+        slot_start: document.getElementById('input-slot-start').value,
+        slot_end: document.getElementById('input-slot-end').value,
+        customer_name: document.getElementById('input-name').value.trim(),
+        phone: document.getElementById('input-phone').value.trim(),
+        line_id: document.getElementById('input-line').value.trim(),
+        condo_name: document.getElementById('input-condo-name').value.trim(),
+        condo_map_link: document.getElementById('input-condo-map').value.trim(),
+        note: document.getElementById('input-note').value.trim(),
+    };
+
+    try {
+        const resp = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+
+        if (resp.ok) {
+            const result = await resp.json();
+            closeModal();
+            showToast('✅ จองสำเร็จ! รหัส: ' + result.booking_code, 'success');
+            setTimeout(function() {
+                window.location.href = '/booking/' + result.id;
+            }, 1000);
+        } else {
+            const err = await resp.json();
+            showToast('❌ ' + (err.detail || 'จองไม่สำเร็จ'), 'error');
+        }
+    } catch (e) {
+        showToast('❌ เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'ยืนยันการจอง';
+}
+
+// Week navigation with 30-day limit
+const minDate = new Date();
+minDate.setDate(minDate.getDate() - 30); // 30 days ago
+
+function isAtMinDate() {
+    const weekStart = new Date(currentStart);
+    weekStart.setHours(0,0,0,0);
+    const min = new Date(minDate);
+    min.setHours(0,0,0,0);
+    return weekStart <= min;
+}
+
+document.getElementById('prev-week').addEventListener('click', function() {
+    const newStart = new Date(currentStart);
+    newStart.setDate(newStart.getDate() - 7);
+    if (newStart < minDate) return; // Block going past 30 days
+    currentStart = newStart;
+    updateWeekLabel();
+    loadCalendar();
+    // Disable button if at limit
+    document.getElementById('prev-week').disabled = isAtMinDate();
+});
+
+document.getElementById('next-week').addEventListener('click', function() {
+    currentStart.setDate(currentStart.getDate() + 7);
+    updateWeekLabel();
+    loadCalendar();
+    // Re-enable prev button
+    document.getElementById('prev-week').disabled = false;
+});
+
+// Condo autocomplete with Nominatim backup
+let condoList = [];
+let searchTimer = null;
+
+// Load local DB for instant first-pass (also API will search it)
+fetch('/static/condos-bangkok.json')
+    .then(r => r.json())
+    .then(data => { condoList = data; })
+    .catch(() => {});
+
+const searchInput = document.getElementById('input-condo-search');
+const hiddenInput = document.getElementById('input-condo-name');
+const suggestions = document.getElementById('condo-suggestions');
+const mapInput = document.getElementById('input-condo-map');
+
+function renderResults(results) {
+    suggestions.innerHTML = '';
+    if (results.length === 0) {
+        suggestions.classList.add('hidden');
+        return;
+    }
+    
+    results.forEach(function(item) {
+        const div = document.createElement('div');
+        div.className = 'px-3 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm';
+        
+        let detail = item.area || item.district || '';
+        if (item.developer) detail += ' · ' + item.developer;
+        if (item.source === 'nominatim') detail += (detail ? ' · ' : '') + '🌐 OSM';
+        
+        div.innerHTML = '<div class="font-medium text-gray-800">' + item.name + '</div>'
+            + '<div class="text-xs text-gray-400">' + detail + '</div>';
+        
+        // Show alternate names for local results
+        if (item.source === 'local' && item.local_alt_names && item.local_alt_names.length) {
+            div.innerHTML += '<div class="text-xs text-gray-300 mt-0.5">หรือ ' + item.local_alt_names.slice(0, 2).join(', ') + '</div>';
+        }
+        
+        div.addEventListener('click', function() {
+            searchInput.value = item.name;
+            hiddenInput.value = item.name;
+            mapInput.value = item.maps_url || 'https://maps.google.com/?q=' + encodeURIComponent(item.name);
+            suggestions.classList.add('hidden');
+        });
+        suggestions.appendChild(div);
+    });
+    suggestions.classList.remove('hidden');
+}
+
+searchInput.addEventListener('input', function() {
+    const q = this.value.trim();
+    hiddenInput.value = '';
+    
+    if (q.length < 1) {
+        suggestions.classList.add('hidden');
+        return;
+    }
+    
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async function() {
+        try {
+            const resp = await fetch('/api/search-condo?q=' + encodeURIComponent(q));
+            const data = await resp.json();
+            renderResults(data.results || []);
+        } catch (e) {
+            // Fallback: filter local DB
+            const ql = q.toLowerCase();
+            const local = condoList.filter(c =>
+                c.name.toLowerCase().includes(ql) ||
+                (c.name_en && c.name_en.toLowerCase().includes(ql)) ||
+                (c.area && c.area.toLowerCase().includes(ql))
+            ).slice(0, 10);
+            if (local.length > 0) {
+                renderResults(local.map(c => ({
+                    ...c,
+                    local_alt_names: c.alternate_names || []
+                })));
+            }
+        }
+    }, q.length >= 3 ? 400 : 200); // Debounce: 400ms for API, 200ms for local
+});
+
+// Hide suggestions on click outside
+document.addEventListener('click', function(e) {
+    if (!document.getElementById('condo-search-wrapper').contains(e.target)) {
+        suggestions.classList.add('hidden');
+    }
+});
+
+// Keyboard navigation for suggestions
+searchInput.addEventListener('keydown', function(e) {
+    const items = suggestions.querySelectorAll('div');
+    const active = suggestions.querySelector('.bg-blue-50');
+    
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!active) { items[0]?.classList.add('bg-blue-50'); return; }
+        active.classList.remove('bg-blue-50');
+        active.nextElementSibling?.classList.add('bg-blue-50');
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!active) return;
+        active.classList.remove('bg-blue-50');
+        active.previousElementSibling?.classList.add('bg-blue-50');
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (active) active.click();
+    } else if (e.key === 'Escape') {
+        suggestions.classList.add('hidden');
+    }
+});
+
+// Update submitBooking to also include condo search value
+const origSubmit = submitBooking;
+submitBooking = async function(event) {
+    // If user typed but didn't select from dropdown, use their typed text
+    if (!document.getElementById('input-condo-name').value && searchInput.value.trim()) {
+        document.getElementById('input-condo-name').value = searchInput.value.trim();
+    }
+    return origSubmit(event);
+};
+
+// Init
+updateWeekLabel();
+loadCalendar();
+// Check initial prev button state
+document.getElementById('prev-week').disabled = isAtMinDate();
+
+
+// Quick book - find earliest available slot
+async function quickBookEarliest() {
+    const btn = document.getElementById('quick-book-btn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ กำลังค้นหา...';
+    
+    try {
+        // Fetch from today up to 60 days ahead
+        const today = new Date();
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + 60);
+        const startStr = toDateStr(today);
+        const endStr = toDateStr(endDate);
+        
+        const resp = await fetch('/api/availability?start_date=' + startStr + '&end_date=' + endStr);
+        const data = await resp.json();
+        
+        // Find first available + bookable slot
+        for (const day of data.dates) {
+            for (const slot of day.slots) {
+                if (slot.status === 'AVAILABLE' && slot.bookable) {
+                    // Navigate to this date's week
+                    const slotDate = new Date(day.date + 'T00:00:00+07:00');
+                    const weekStart = new Date(slotDate);
+                    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                    currentStart = weekStart;
+                    updateWeekLabel();
+                    await loadCalendar();
+                    
+                    // Open booking modal after calendar loads
+                    setTimeout(function() {
+                        var timeLabel = slot.start + '\u2013' + slot.end;
+                        openBookingModal(day.date, slot.start, slot.end, timeLabel);
+                        btn.disabled = false;
+                        btn.textContent = origText;
+                    }, 300);
+                    return;
+                }
+            }
+        }
+        
+        alert('ขออภัย ไม่พบช่วงเวลาที่ว่างใน 60 วันข้างหน้า');
+    } catch (e) {
+        alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+    }
+    
+    btn.disabled = false;
+    btn.textContent = origText;
+}
+</script>
+{% endblock %}

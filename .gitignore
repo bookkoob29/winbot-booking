@@ -1,0 +1,30 @@
+# Database
+bookings.db
+*.db
+
+# Uploads
+uploads/slips/*
+!uploads/slips/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Render
+.tmp/
