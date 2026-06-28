@@ -142,8 +142,13 @@ async def api_availability(start_date: str = None, end_date: str = None):
     results = db.get_availability(start_date, end_date)
 
     # Add colors and labels; enforce booking rules
+    import pytz
+    bangkok_tz = pytz.timezone("Asia/Bangkok")
+    now_bkk = _dt.now(bangkok_tz)
+    min_bookable = now_bkk + _td(hours=24)  # 24-hour advance booking policy
+
     for day in results:
-        is_past = day["date"] < today  # Only past (yesterday-), today is bookable
+        is_past = day["date"] < today
         for slot in day["slots"]:
             slot["color"] = config.STATUS_COLORS.get(slot["status"], "#DBEAFE")
             slot["label"] = config.STATUS_LABELS.get(slot["status"], slot["status"])
@@ -151,6 +156,17 @@ async def api_availability(start_date: str = None, end_date: str = None):
             # Past dates → read-only (not bookable)
             if is_past:
                 slot["bookable"] = False
+            
+            # 24-hour advance booking policy
+            if slot["bookable"]:
+                try:
+                    slot_start_dt_str = f"{day['date']}T{slot['start']}:00+07:00"
+                    slot_start_dt = _dt.fromisoformat(slot_start_dt_str)
+                    if slot_start_dt < min_bookable:
+                        slot["bookable"] = False
+                        slot["label"] = "จองล่วงหน้า 24 ชม."
+                except Exception:
+                    pass
             
             # Don't expose booking details to public
             if not slot["bookable"]:
@@ -232,6 +248,17 @@ async def create_booking(data: BookingCreate, request: Request):
     # Verify slot times
     if not verify_slot_times(data.slot_start, data.slot_end):
         raise HTTPException(status_code=400, detail="เวลา Slot ไม่ถูกต้อง")
+
+    # 24-hour advance booking policy
+    import pytz
+    bangkok_tz = pytz.timezone("Asia/Bangkok")
+    now_bkk = datetime.now(bangkok_tz)
+    min_bookable = now_bkk + timedelta(hours=24)
+    slot_start_dt_str = f"{data.booking_date}T{data.slot_start}:00+07:00"
+    slot_start_dt = datetime.fromisoformat(slot_start_dt_str)
+    if slot_start_dt < min_bookable:
+        raise HTTPException(status_code=400,
+            detail="กรุณาจองล่วงหน้าอย่างน้อย 24 ชั่วโมง")
 
     # Create booking
     booking_id, booking_code, error = db.create_booking(
