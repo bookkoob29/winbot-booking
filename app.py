@@ -46,7 +46,8 @@ templates_dir.mkdir(exist_ok=True)
 (templates_dir / "admin").mkdir(exist_ok=True)
 templates = Jinja2Templates(directory=str(templates_dir))
 
-# Inject config into templates
+# Inject config into templates (disable cache to avoid Jinja2 hashing issues)
+templates.env.cache = None
 templates.env.globals.update(
     config=config,
     STATUS_LABELS=config.STATUS_LABELS,
@@ -653,10 +654,19 @@ async def not_found(request: Request, exc):
 
 @app.exception_handler(500)
 async def server_error(request: Request, exc):
-    return templates.TemplateResponse("error.html", {
-        "request": request,
-        "message": "เกิดข้อผิดพลาดภายในระบบ",
-    }, status_code=500)
+    try:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "message": "เกิดข้อผิดพลาดภายในระบบ",
+        }, status_code=500)
+    except Exception:
+        from starlette.responses import PlainTextResponse
+        return PlainTextResponse("เกิดข้อผิดพลาดภายในระบบ (Internal Server Error)", status_code=500)
+
+@app.exception_handler(Exception)
+async def generic_error(request: Request, exc):
+    from starlette.responses import PlainTextResponse
+    return PlainTextResponse(f"เกิดข้อผิดพลาด: {str(exc)}", status_code=500)
 
 # === STARTUP ===
 
