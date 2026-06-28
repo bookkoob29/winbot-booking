@@ -136,7 +136,7 @@ def get_conn():
     if USE_POSTGRES:
         import psycopg2
         conn = psycopg2.connect(DATABASE_URL)
-        conn.autocommit = False
+        conn.autocommit = True
         return conn
     else:
         import sqlite3
@@ -148,12 +148,19 @@ def get_conn():
 
 
 def _execute(conn, sql, params=None):
-    """Execute with proper placeholder style for the backend."""
+    """Execute with proper placeholder style for the backend. Returns cursor."""
     if USE_POSTGRES:
         sql = sql.replace("?", "%s")
-    if params is None:
-        return conn.execute(sql)
-    return conn.execute(sql, params)
+        cursor = conn.cursor()
+        if params is None:
+            cursor.execute(sql)
+        else:
+            cursor.execute(sql, params)
+        return cursor
+    else:
+        if params is None:
+            return conn.execute(sql)
+        return conn.execute(sql, params)
 
 
 def _fetchone(cursor):
@@ -236,10 +243,7 @@ def generate_booking_code(booking_date, conn=None):
             "SELECT COUNT(*) FROM bookings WHERE booking_date = ?",
             (booking_date,)
         )
-        if USE_POSTGRES:
-            count = cursor.fetchone()[0]
-        else:
-            count = cursor.fetchone()[0]
+        count = cursor.fetchone()[0]
         return f"BK-{date_part}-{count + 1:03d}"
     finally:
         if close_conn:
