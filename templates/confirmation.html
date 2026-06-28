@@ -1,59 +1,70 @@
 {% extends "base.html" %}
 {% block title %}ยืนยันการจอง | WINBOT{% endblock %}
 {% block content %}
-<nav class="bg-white shadow-sm border-b">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-        <a href="/" class="text-blue-600 font-bold text-lg">WINBOT เช็ดกระจก</a>
-        <a href="/availability" class="text-blue-600 text-sm font-medium">← กลับไปเลือกจอง</a>
-    </div>
-</nav>
-
-<div class="max-w-2xl mx-auto px-4 py-8">
-    {% set status = booking.status %}
-    {% set color_map = {'AVAILABLE':'#DBEAFE','RESERVED_UNPAID':'#64748B','PAID_PENDING_CONFIRM':'#F59E0B','CONFIRMED_PAID':'#16A34A'} %}
-    {% set label_map = {'AVAILABLE':'ว่าง','RESERVED_UNPAID':'ยังไม่ชำระเงิน','PAID_PENDING_CONFIRM':'รอ Admin ตรวจสอบ','CONFIRMED_PAID':'จองและชำระเงินแล้ว'} %}
-    {% set text_map = {'AVAILABLE':'#1E40AF','RESERVED_UNPAID':'#FFFFFF','PAID_PENDING_CONFIRM':'#FFFFFF','CONFIRMED_PAID':'#FFFFFF'} %}
-
-    <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+<div class="max-w-lg mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-sm p-6">
         <!-- Status badge -->
         <div class="text-center mb-6">
-            <div class="inline-block px-6 py-2 rounded-full text-sm font-bold" style="background:{{ color_map.get(status, '#DBEAFE') }}; color:{{ text_map.get(status, '#1E40AF') }}">
-                {{ label_map.get(status, status) }}
-            </div>
+            {% set status_colors = {'RESERVED_UNPAID': 'bg-yellow-100 text-yellow-800', 'PAID_PENDING_CONFIRM': 'bg-orange-100 text-orange-800', 'CONFIRMED_PAID': 'bg-green-100 text-green-800', 'AVAILABLE': 'bg-gray-100 text-gray-600'} %}
+            <span class="inline-block px-4 py-1.5 rounded-full text-sm font-bold {{ status_colors.get(status, 'bg-gray-100 text-gray-600') }}">
+                {{ STATUS_LABELS.get(status, status) }}
+            </span>
         </div>
 
-        <h1 class="text-2xl font-bold text-gray-800 text-center mb-2">รายละเอียดการจอง</h1>
-        <p class="text-center text-gray-400 text-sm mb-6">รหัส: <strong class="text-blue-600">{{ booking.booking_code }}</strong></p>
-
-        <div class="space-y-3 border-t pt-4">
-            <div class="flex justify-between"><span class="text-gray-500">วันที่</span><span class="font-medium">{{ booking.booking_date }}</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">เวลา</span><span class="font-medium">{{ booking.slot_start }}–{{ booking.slot_end }}</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">ชื่อผู้จอง</span><span class="font-medium">{{ booking.customer_name }}</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">เบอร์โทร</span><span class="font-medium">{{ booking.phone }}</span></div>
+        <!-- Booking info -->
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">เลขที่การจอง</span>
+                <span class="font-mono font-bold">{{ booking.booking_code }}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">วันที่</span>
+                <span class="font-medium">{{ booking.booking_date }}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">เวลา</span>
+                <span class="font-medium">{{ booking.slot_start }} – {{ booking.slot_end }}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">ชื่อผู้จอง</span>
+                <span class="font-medium">{{ booking.customer_name }}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">เบอร์ติดต่อ</span>
+                <span class="font-medium">{{ booking.phone }}</span>
+            </div>
             {% if booking.line_id %}
-            <div class="flex justify-between"><span class="text-gray-500">Line ID</span><span class="font-medium">{{ booking.line_id }}</span></div>
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">Line ID</span>
+                <span class="font-medium">{{ booking.line_id }}</span>
+            </div>
             {% endif %}
             {% if booking.note %}
-            <div class="flex justify-between"><span class="text-gray-500">หมายเหตุ</span><span class="font-medium">{{ booking.note }}</span></div>
+            <div class="flex justify-between border-b pb-2">
+                <span class="text-gray-500">หมายเหตุ</span>
+                <span class="font-medium">{{ booking.note }}</span>
+            </div>
             {% endif %}
-            <div class="flex justify-between"><span class="text-gray-500">ค่าเช่า</span><span class="font-bold text-blue-600">500 บาท</span></div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">ค่าเช่า</span>
+                <span class="font-bold text-lg">{{ BOOKING_PRICE }} บาท</span>
+            </div>
         </div>
 
         <!-- Payment instructions -->
         <div class="mt-6 p-4 bg-blue-50 rounded-xl">
             <h3 class="font-bold text-blue-800 mb-2">💳 วิธีการชำระเงิน</h3>
-            <p class="text-blue-700 text-sm">กรุณาชำระเงิน <strong>500 บาท</strong> ผ่านทาง:</p>
-            <div class="mt-2 p-3 bg-white rounded-lg border text-sm">
-                <p class="font-bold">CLICX (คลิกซ์)</p>
-                <p>เลขบัญชี: <strong class="text-lg">167-4-59959-9</strong></p>
-                <p>ชื่อบัญชี: สรคม ธนาสุวิศาล</p>
-                <p class="text-xs text-gray-400 mt-1">(Sorlakom Thanasuwisarn)</p>
+            <p class="text-blue-700 text-sm mb-2">โอนเงินค่ามัดจำ + ค่าเช่าไปที่บัญชีด้านล่าง</p>
+            <div class="bg-white rounded-lg p-3 text-sm space-y-1">
+                <div><span class="text-gray-500">ธนาคาร:</span> <strong>CLICX (คลิกซ์)</strong></div>
+                <div><span class="text-gray-500">เลขที่บัญชี:</span> <strong class="text-lg tracking-wider">167-4-59959-9</strong></div>
+                <div><span class="text-gray-500">ชื่อบัญชี:</span> <strong>สรคม ธนาสุวิศาล</strong></div>
+                <div class="text-xs text-gray-400 mt-1">(Sorlakom Thanasuwisarn)</div>
             </div>
-            <p class="text-xs text-blue-600 mt-2">📸 หลังจากโอนแล้ว กรุณาอัปโหลดสลิปด้านบน</p>
         </div>
 
         <!-- Slip upload -->
-        {% if status in ('RESERVED_UNPAID', 'PAID_PENDING_CONFIRM') %}
+        {% if status in ['RESERVED_UNPAID', 'PAID_PENDING_CONFIRM'] %}
         <div class="mt-6 p-4 border-2 border-dashed border-gray-300 rounded-xl">
             <h3 class="font-bold text-gray-700 mb-3">📎 แนบสลิปการโอน</h3>
             <form id="slip-form" onsubmit="return false;">
@@ -63,12 +74,12 @@
                         class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50">
                     อัปโหลดสลิป
                 </button>
+                <div id="slip-status" class="mt-2 text-sm text-center"></div>
             </form>
-            <p id="slip-message" class="text-sm mt-2 text-gray-500"></p>
         </div>
         {% endif %}
 
-        <!-- Existing slips -->
+        <!-- Uploaded slips -->
         {% if slips %}
         <div class="mt-4">
             <h3 class="font-bold text-gray-700 mb-2">📎 สลิปที่แนบแล้ว ({{ slips|length }})</h3>
@@ -115,7 +126,7 @@
             <div id="tnc-content" class="mt-3 text-sm text-gray-600 space-y-3 hidden">
                 <div class="bg-gray-50 rounded-xl p-4 space-y-4">
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-2">เงื่อนไขการใช้งาน</h4>
+                        <h4 class="font-bold text-gray-800 mb-2">📋 เงื่อนไขการใช้งาน</h4>
                         <ul class="list-disc list-inside space-y-1 text-gray-600">
                             <li>ผู้เช่าต้องใช้งานเครื่องกับ <strong>กระจกเรียบ แข็งแรง และไม่มีรอยร้าว</strong> เท่านั้น</li>
                             <li>ต้องใช้ <strong>สายเซฟตี้ทุกครั้ง</strong> ระหว่างใช้งาน</li>
@@ -125,7 +136,22 @@
                         </ul>
                     </div>
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-2">ค่าปรับ / ค่าเสียหาย</h4>
+                        <h4 class="font-bold text-gray-800 mb-2">⏱ ระยะเวลาเช่า</h4>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>ระยะเวลาเช่า 3 ชั่วโมง นับรวมถึงการคืนอุปกรณ์แก่เจ้าหน้าที่ด้วย</li>
+                            <li>แนะนำให้เผื่อเวลาประมาณ <strong>30 นาที</strong> สำหรับเก็บอุปกรณ์และนำส่งคืนเจ้าหน้าที่</li>
+                            <li>กรณีคืนเกินเวลา คิดค่าปรับเพิ่ม <strong>100 บาท / ชั่วโมง</strong></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-2">💰 ค่ามัดจำ</h4>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>มีค่ามัดจำอุปกรณ์ <strong>2,000 บาท</strong> ชำระในวันที่รับอุปกรณ์</li>
+                            <li>มัดจำจะคืนเต็มจำนวนเมื่อส่งคืนอุปกรณ์ครบ และอยู่ในสภาพปกติ</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-2">⚠️ ค่าปรับ / ค่าเสียหาย</h4>
                         <ul class="list-disc list-inside space-y-1 text-gray-600">
                             <li>กรณีคืนเกินเวลา คิดเพิ่ม <strong>100 บาท / ชั่วโมง</strong></li>
                             <li>กรณีผ้าเช็ดสูญหายหรือเสียหาย คิด <strong>150 บาท / ชิ้น</strong></li>
@@ -135,15 +161,22 @@
                         </ul>
                     </div>
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-2">การยืนยันการจอง</h4>
+                        <h4 class="font-bold text-gray-800 mb-2">📌 การยืนยันการจอง</h4>
                         <ul class="list-disc list-inside space-y-1 text-gray-600">
                             <li>การจองจะสมบูรณ์เมื่อผู้เช่าแนบ Slip และ Admin ตรวจสอบยืนยันเรียบร้อยแล้ว</li>
                             <li>หากจองแล้วแต่ยังไม่ชำระเงินหรือยังไม่แนบ Slip ระบบอาจกัน Slot ไว้ชั่วคราวเท่านั้น</li>
-                            <li>แนะนำให้กำหนดเวลาการชำระเงินภายใน 30 นาที หลังจอง เพื่อป้องกันการจองทิ้ง</li>
+                            <li>หากทำการจองไว้แต่ไม่ชำระเงินภายใน <strong>48 ชั่วโมง</strong> ระบบจะทำการยกเลิกโดยอัตโนมัติ</li>
                         </ul>
                     </div>
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-2">ข้อสงวนสิทธิ์</h4>
+                        <h4 class="font-bold text-gray-800 mb-2">🔄 การยกเลิกและเลื่อนการจอง</h4>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>หลังจากชำระเงินค่าเช่าและยืนยันการจองแล้ว จะไม่สามารถยกเลิกได้ และจะไม่มีการคืนเงิน</li>
+                            <li>สามารถใช้สิทธิ์เลื่อนการจองได้ <strong>1 ครั้ง</strong> โดยเลือกวันเวลาที่ว่างอยู่ในระบบเท่านั้น</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-2">📢 ข้อสงวนสิทธิ์</h4>
                         <p class="text-gray-600">ร้านขอสงวนสิทธิ์ไม่ปล่อยเช่า หากประเมินว่าพื้นผิวกระจก หน้างาน หรือรูปแบบการใช้งานมีความเสี่ยง ไม่เหมาะสม หรือไม่ปลอดภัยต่อผู้ใช้งานและอุปกรณ์</p>
                     </div>
                 </div>
@@ -153,53 +186,70 @@
 </div>
 
 <script>
-async function uploadSlip() {
+function uploadSlip() {
     const fileInput = document.getElementById('slip-file');
     const btn = document.getElementById('slip-btn');
-    const msg = document.getElementById('slip-message');
+    const status = document.getElementById('slip-status');
 
-    if (!fileInput.files.length) {
-        msg.textContent = '⚠️ กรุณาเลือกไฟล์สลิป';
-        msg.className = 'text-sm mt-2 text-red-500';
+    if (!fileInput.files[0]) {
+        status.textContent = '❌ กรุณาเลือกไฟล์สลิปก่อน';
+        status.className = 'mt-2 text-sm text-center text-red-600';
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        status.textContent = '❌ รองรับเฉพาะไฟล์ .jpg และ .png เท่านั้น';
+        status.className = 'mt-2 text-sm text-center text-red-600';
+        return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+        status.textContent = '❌ ไฟล์ต้องมีขนาดไม่เกิน 2 MB';
+        status.className = 'mt-2 text-sm text-center text-red-600';
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'กำลังอัปโหลด...';
-    msg.textContent = '';
+    btn.textContent = '⏳ กำลังอัปโหลด...';
+    status.textContent = '';
 
     const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
+    formData.append('file', file);
 
-    try {
-        const resp = await fetch('/api/bookings/{{ booking.id }}/slip', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (resp.ok) {
-            msg.textContent = '✅ อัปโหลดสลิปสำเร็จ!';
-            msg.className = 'text-sm mt-2 text-green-600';
-            setTimeout(function() { location.reload(); }, 1500);
-        } else {
-            const err = await resp.json();
-            msg.textContent = '❌ ' + (err.detail || 'อัปโหลดไม่สำเร็จ');
-            msg.className = 'text-sm mt-2 text-red-500';
-        }
-    } catch (e) {
-        msg.textContent = '❌ เกิดข้อผิดพลาด กรุณาลองใหม่';
-        msg.className = 'text-sm mt-2 text-red-500';
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'อัปโหลดสลิป';
+    fetch('/api/bookings/{{ booking.id }}/slip', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) {
+        if (!r.ok) return r.json().then(function(err) { throw err; });
+        return r.json();
+    })
+    .then(function(data) {
+        status.textContent = '✅ อัปโหลดสำเร็จ! รอ Admin ตรวจสอบ';
+        status.className = 'mt-2 text-sm text-center text-green-600';
+        btn.textContent = '✅ อัปโหลดแล้ว';
+        btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        btn.classList.add('bg-green-600', 'hover:bg-green-700');
+    })
+    .catch(function(err) {
+        const msg = err.detail || 'อัปโหลดไม่สำเร็จ';
+        status.textContent = '❌ ' + msg;
+        status.className = 'mt-2 text-sm text-center text-red-600';
+        btn.disabled = false;
+        btn.textContent = 'อัปโหลดสลิป';
+    });
 }
 
 function toggleTnc() {
     const content = document.getElementById('tnc-content');
     const arrow = document.getElementById('tnc-arrow');
-    content.classList.toggle('hidden');
-    arrow.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.add('hidden');
+        arrow.style.transform = '';
+    }
 }
 </script>
 {% endblock %}
