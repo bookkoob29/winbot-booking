@@ -198,6 +198,87 @@ async function loadCalendar() {
     container.innerHTML = '';
 
     try {
+        const resp = await fetch('/api/availability?start_date=' + start + '&end_date=' + end);
+        const data = await resp.json();
+        loading.style.display = 'none';
+
+        const todayStr = toDateStr(new Date());
+
+        data.dates.forEach(function(day) {
+            const isToday = day.date === todayStr;
+            const dayName = formatDay(day.date);
+            const dateLabel = formatDate(day.date);
+
+            // Day card
+            const card = document.createElement('div');
+            card.className = 'p-4' + (isToday ? ' bg-blue-50' : '');
+
+            // Day header
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-3';
+            header.innerHTML = '<div><span class="text-xs text-gray-400">' + dayName + '</span>'
+                + '<span class="font-bold text-gray-800 ml-2">' + dateLabel + '</span>'
+                + (isToday ? '<span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">วันนี้</span>' : '')
+                + '</div>';
+            card.appendChild(header);
+
+            // Slots grid — 2 columns on mobile, 4 on desktop
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-2 md:grid-cols-4 gap-2';
+
+            day.slots.forEach(function(slot) {
+                const statusLabel = slot.label || slot.status;
+                let colorStyle = '';
+                let isBookable = slot.bookable;
+
+                if (slot.status === 'AVAILABLE') {
+                    colorStyle = 'background-color: #DBEAFE; color: #1E40AF;';
+                } else if (slot.status === 'RESERVED_UNPAID') {
+                    colorStyle = 'background-color: #64748B; color: white;';
+                } else if (slot.status === 'PAID_PENDING_CONFIRM') {
+                    colorStyle = 'background-color: #F59E0B; color: white;';
+                } else if (slot.status === 'CONFIRMED_PAID') {
+                    colorStyle = 'background-color: #16A34A; color: white;';
+                }
+
+                let btnClass = 'rounded-lg p-2 text-xs font-medium transition-all text-center border border-transparent';
+                if (isBookable) {
+                    btnClass += ' cursor-pointer hover:shadow hover:border-blue-300 hover:scale-105 active:scale-95';
+                } else if (slot.status === 'AVAILABLE') {
+                    btnClass += ' cursor-default opacity-50';
+                } else {
+                    btnClass += ' cursor-default opacity-80';
+                }
+
+                let slotContent = '<div class="font-semibold">' + statusLabel + '</div>'
+                    + '<div class="opacity-75 mt-0.5">' + slot.start + '–' + slot.end + '</div>';
+
+                // Show "ปิด" for past/today available slots (read-only)
+                if (!isBookable && slot.status === 'AVAILABLE') {
+                    slotContent = '<div class="font-semibold">ปิด</div>'
+                        + '<div class="opacity-75 mt-0.5">' + slot.start + '–' + slot.end + '</div>';
+                }
+
+                const slotDiv = document.createElement('div');
+                slotDiv.className = btnClass;
+                slotDiv.setAttribute('style', colorStyle);
+                if (isBookable) {
+                    var slotTimeLabel = slot.start + '\u2013' + slot.end;
+                    slotDiv.setAttribute('onclick', "openBookingModal('" + day.date + "', '" + slot.start + "', '" + slot.end + "', '" + slotTimeLabel + "')");
+                }
+                slotDiv.innerHTML = slotContent;
+                grid.appendChild(slotDiv);
+            });
+
+            card.appendChild(grid);
+            container.appendChild(card);
+        });
+    } catch (e) {
+        loading.textContent = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+        loading.style.display = 'block';
+    }
+}
+
 // Modal
 function openBookingModal(date, start, end, slotLabel) {
     document.getElementById('modal-date-display').textContent = formatDate(date);
