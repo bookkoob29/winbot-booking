@@ -108,7 +108,7 @@
         <div class="space-y-2 max-h-96 overflow-y-auto">
             {% for log in logs %}
             <div class="flex items-start gap-3 text-sm p-2 {% if not log.telegram_sent %}bg-red-50 rounded{% endif %}">
-                <div class="text-gray-400 text-xs whitespace-nowrap w-16">{{ log.created_at[:10] if log.created_at else '' }}<br>{{ log.created_at[11:19] if log.created_at else '' }}</div>
+                <div class="text-gray-400 text-xs whitespace-nowrap w-16">{{ (log.created_at|string)[:10] if log.created_at else '' }}<br>{{ (log.created_at|string)[11:19] if log.created_at else '' }}</div>
                 <div class="flex-1">
                     <span class="font-medium">{{ log.activity_type }}</span>
                     <span class="text-gray-500"> - {{ log.actor_name }}</span>
