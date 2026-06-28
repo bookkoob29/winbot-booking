@@ -5,12 +5,12 @@
 <!-- Navigation bar -->
 <nav class="bg-white shadow-sm border-b">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-        <a href="/" class="text-blue-600 font-bold text-lg">{{ _('hero_title') }}</a>
+        <a href="/" class="text-blue-600 font-bold text-lg">WINBOT เช็ดกระจก</a>
         <div class="flex gap-3 text-sm items-center">
-            <a href="/" class="text-gray-600 hover:text-blue-600" data-i18n="nav_home">{{ _('nav_home') }}</a>
-            <a href="/availability" class="text-blue-600 font-medium" data-i18n="nav_book">{{ _('nav_book') }}</a>
+            <a href="/" class="text-gray-600 hover:text-blue-600" data-i18n="nav_home">หน้าแรก</a>
+            <a href="/availability" class="text-blue-600 font-medium" data-i18n="nav_book">จอง</a>
             <div class="ml-2 border-l pl-3 flex gap-1 text-xs items-center">
-                <span class="text-gray-400" data-i18n="nav_lang">{{ _('nav_lang') }}</span>
+                <span class="text-gray-400" data-i18n="nav_lang">ภาษา</span>
                 <button onclick="setLanguage('th')" class="lang-btn px-1.5 py-0.5 rounded font-bold text-blue-600" data-lang="th">TH</button>
                 <button onclick="setLanguage('en')" class="lang-btn px-1.5 py-0.5 rounded text-gray-500 hover:text-gray-700" data-lang="en">EN</button>
                 <button onclick="setLanguage('zh')" class="lang-btn px-1.5 py-0.5 rounded text-gray-500 hover:text-gray-700" data-lang="zh">中文</button>
@@ -21,7 +21,7 @@
 
 <div class="max-w-4xl mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-2">เลือกวันและเวลา</h1>
-    <p class="text-gray-500 mb-6">data-i18n="avail_subtitle">{{ _('avail_subtitle') }}<strong class="text-blue-600">500 บาท / 3 ชั่วโมง</strong></p>
+    <p class="text-gray-500 mb-6">data-i18n="avail_subtitle">เลือกรอบที่คุณสะดวก ราคา <strong class="text-blue-600">500 บาท / 3 ชั่วโมง</strong></p>
 
     <!-- Week navigation -->
     <div class="flex items-center justify-between mb-4 gap-2">
@@ -47,7 +47,8 @@
     <div class="text-center mb-4">
         <button id="quick-book-btn" onclick="quickBookEarliest()"
                 class="inline-block bg-green-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 transition-all text-sm shadow-sm">
-            data-i18n="quick_book">{{ _('quick_book') }}</button>
+            data-i18n="quick_book">⚡ จองด่วนที่สุด
+        </button>
         <p class="text-xs text-gray-400 mt-1">ค้นหาวันและเวลาที่ว่างเร็วที่สุดให้อัตโนมัติ</p>
     </div>
 
@@ -71,12 +72,12 @@
         <div class="mb-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-xs text-blue-600 font-medium"data-i18n="modal_slot">{{ _('modal_slot') }}</div>
+                    <div class="text-xs text-blue-600 font-medium"data-i18n="modal_slot">ช่วงเวลาที่เลือก</div>
                     <div class="text-lg font-bold text-blue-800 mt-0.5"><span id="modal-date-display"></span></div>
                     <div class="text-base font-semibold text-blue-700"><span id="modal-slot-display"></span></div>
                 </div>
                 <div class="text-right">
-                    <div class="text-xs text-blue-600"data-i18n="modal_price">{{ _('modal_price') }}</div>
+                    <div class="text-xs text-blue-600"data-i18n="modal_price">ค่าเช่า</div>
                     <div class="text-2xl font-bold text-blue-800">500</div>
                     <div class="text-xs text-blue-600">บาท</div>
                 </div>

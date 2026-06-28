@@ -66,23 +66,11 @@ jinja_env.globals.update(
 # Custom TemplateResponse that uses our jinja_env
 from starlette.templating import _TemplateResponse
 
-# Add translation function to Jinja2 globals
-import i18n as i18n_mod
-
-def _(key):
-    return key  # Fallback — real translation applied via context
-
-jinja_env.globals["_"] = i18n_mod.t
-
 def render_template(request, name, context=None):
     """Render a Jinja2 template and return a Starlette response."""
     if context is None:
         context = {}
     context.setdefault("request", request)
-    # Inject translation function based on lang
-    lang = context.get("lang", "th")
-    context["_t"] = i18n_mod.t  # needs lang passed as second arg
-    context["_"] = lambda key: i18n_mod.t(key, lang)
     template = jinja_env.get_template(name)
     return _TemplateResponse(template, context)
 
