@@ -28,3 +28,4 @@ logs/*.log
 
 # Render
 .tmp/
+*.bundle\n*.zip
