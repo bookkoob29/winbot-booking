@@ -220,8 +220,10 @@ async def booking_confirmation(request: Request, booking_id: str):
         return render_template(request, "error.html")
 
     slips = db.get_slips(booking_id)
-    return render_template(request, "confirmation.html", {"booking": dict(booking),
+    return render_template(request, "confirmation.html", {
+        "booking": dict(booking),
         "slips": [dict(s) for s in slips],
+        "status": booking["status"],
     })
 
 @app.post("/api/bookings", status_code=201)
