@@ -628,7 +628,12 @@ async def search_condo(q: str = ""):
                     )
                     lat_str = r.get("lat", "0")
                     lon_str = r.get("lon", "0")
-                    maps_url = f"https://maps.google.com/?q={lat_str},{lon_str}"
+                    # Use Google Maps search by name (more accurate than OSM coords)
+                    import urllib.parse
+                    search_name = r_name
+                    if "Bangkok" not in search_name:
+                        search_name += " Bangkok"
+                    maps_url = f"https://www.google.com/maps/search/{urllib.parse.quote(search_name)}/"
                     results.append({
                         "source": "nominatim",
                         "name": r_name,

@@ -404,7 +404,7 @@ function renderResults(results) {
         div.addEventListener('click', function() {
             searchInput.value = item.name;
             hiddenInput.value = item.name;
-            mapInput.value = item.maps_url || 'https://maps.google.com/?q=' + encodeURIComponent(item.name);
+            mapInput.value = item.maps_url || 'https://www.google.com/maps/search/' + encodeURIComponent(item.name + ' Bangkok');
             suggestions.classList.add('hidden');
         });
         suggestions.appendChild(div);
