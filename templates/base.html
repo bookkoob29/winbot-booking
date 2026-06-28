@@ -50,7 +50,7 @@
 
     <script>
         // i18n setup
-        let currentLang = localStorage.getItem('winbot_lang') || 'th';
+        let currentLang = '{{ lang|default('th')|trim }}' || localStorage.getItem('winbot_lang') || 'th';
 
         function setLanguage(lang) {
             currentLang = lang;

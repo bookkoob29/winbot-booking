@@ -121,10 +121,13 @@ async def landing_page(request: Request):
         return PlainTextResponse(f"เกิดข้อผิดพลาด: {e}\n\n{error_detail}", status_code=500)
 
 @app.get("/availability", response_class=HTMLResponse)
-async def availability_page(request: Request):
-    """Calendar availability page."""
+@app.get("/availability/{lang}", response_class=HTMLResponse)
+async def availability_page(request: Request, lang: str = "th"):
+    """Calendar availability page with optional language prefix (th/en/zh)."""
+    if lang not in ("th", "en", "zh"):
+        lang = "th"
     week_start, week_end = get_week_range()
-    return render_template(request, "availability.html", {"week_start": week_start, "week_end": week_end})
+    return render_template(request, "availability.html", {"week_start": week_start, "week_end": week_end, "lang": lang})
 
 @app.get("/api/availability")
 async def api_availability(start_date: str = None, end_date: str = None):
@@ -229,8 +232,11 @@ END:VCALENDAR"""
     )
 
 @app.get("/booking/{booking_id}", response_class=HTMLResponse)
-async def booking_confirmation(request: Request, booking_id: str):
-    """Booking confirmation page."""
+@app.get("/booking/{booking_id}/{lang}", response_class=HTMLResponse)
+async def booking_confirmation(request: Request, booking_id: str, lang: str = "th"):
+    """Booking confirmation page with optional language prefix."""
+    if lang not in ("th", "en", "zh"):
+        lang = "th"
     booking = db.get_booking(booking_id)
     if not booking:
         return render_template(request, "error.html")
@@ -240,6 +246,7 @@ async def booking_confirmation(request: Request, booking_id: str):
         "booking": dict(booking),
         "slips": [dict(s) for s in slips],
         "status": booking["status"],
+        "lang": lang,
     })
 
 @app.post("/api/bookings", status_code=201)
