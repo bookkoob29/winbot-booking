@@ -403,6 +403,16 @@ async def admin_booking_detail(request: Request, booking_id: str, _admin=Depends
         "allowed_transitions": config.ALLOWED_TRANSITIONS.get(booking["status"], []),
     })
 
+@app.post("/admin/api/reset-database")
+async def admin_reset_database(request: Request, _admin=Depends(get_admin_session)):
+    """Admin API: clear all data from database."""
+    try:
+        db.reset_all_data()
+        return {"status": "ok", "message": "รีเซ็ตฐานข้อมูลเรียบร้อยแล้ว"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.patch("/admin/api/bookings/{booking_id}/status")
 async def admin_update_status(booking_id: str, data: BookingStatusUpdate, request: Request, _admin=Depends(get_admin_session)):
     """Admin API: change booking status."""

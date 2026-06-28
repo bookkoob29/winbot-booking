@@ -655,6 +655,18 @@ def expire_unpaid_bookings():
         conn.close()
 
 
+def reset_all_data():
+    """Clear all data from database tables. Admin-only."""
+    conn = get_conn()
+    try:
+        _execute(conn, "DELETE FROM activity_logs")
+        _execute(conn, "DELETE FROM slip_files")
+        _execute(conn, "DELETE FROM bookings")
+        conn.commit()
+    finally:
+        conn.close()
+
+
 # ── Export ──
 
 def export_bookings_csv(date_from=None, date_to=None):
