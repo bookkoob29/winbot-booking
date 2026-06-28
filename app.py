@@ -142,8 +142,8 @@ async def api_availability(start_date: str = None, end_date: str = None):
     results = db.get_availability(start_date, end_date)
 
     # Add colors and labels; enforce booking rules
-    import pytz
-    bangkok_tz = pytz.timezone("Asia/Bangkok")
+    from zoneinfo import ZoneInfo
+    bangkok_tz = ZoneInfo("Asia/Bangkok")
     now_bkk = _dt.now(bangkok_tz)
     min_bookable = now_bkk + _td(hours=24)  # 24-hour advance booking policy
 
@@ -185,9 +185,9 @@ async def download_ics(booking_id: str):
 
     # Build ICS content
     from datetime import datetime, timedelta
-    import pytz
+    from zoneinfo import ZoneInfo
     try:
-        tz = pytz.timezone("Asia/Bangkok")
+        tz = ZoneInfo("Asia/Bangkok")
     except:
         tz = None
 
@@ -196,8 +196,8 @@ async def download_ics(booking_id: str):
     end_hm = booking["slot_end"]
 
     if tz:
-        dt_start = tz.localize(datetime.strptime(f"{date_str} {start_hm}", "%Y-%m-%d %H:%M"))
-        dt_end = tz.localize(datetime.strptime(f"{date_str} {end_hm}", "%Y-%m-%d %H:%M"))
+        dt_start = datetime.strptime(f"{date_str} {start_hm}", "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+        dt_end = datetime.strptime(f"{date_str} {end_hm}", "%Y-%m-%d %H:%M").replace(tzinfo=tz)
     else:
         dt_start = datetime.strptime(f"{date_str} {start_hm}", "%Y-%m-%d %H:%M")
         dt_end = datetime.strptime(f"{date_str} {end_hm}", "%Y-%m-%d %H:%M")
@@ -250,8 +250,8 @@ async def create_booking(data: BookingCreate, request: Request):
         raise HTTPException(status_code=400, detail="เวลา Slot ไม่ถูกต้อง")
 
     # 24-hour advance booking policy
-    import pytz
-    bangkok_tz = pytz.timezone("Asia/Bangkok")
+    from zoneinfo import ZoneInfo
+    bangkok_tz = ZoneInfo("Asia/Bangkok")
     now_bkk = datetime.now(bangkok_tz)
     min_bookable = now_bkk + timedelta(hours=24)
     slot_start_dt_str = f"{data.booking_date}T{data.slot_start}:00+07:00"
