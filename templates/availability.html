@@ -202,77 +202,90 @@ async function loadCalendar() {
         const data = await resp.json();
         loading.style.display = 'none';
 
-        const todayStr = toDateStr(new Date());
+        if (!data.dates || data.dates.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-400 py-10">ไม่พบข้อมูล</div>';
+            return;
+        }
 
+        // Build a map: date → hour → slot data
+        const slotMap = {};
         data.dates.forEach(function(day) {
-            const isToday = day.date === todayStr;
-            const dayName = formatDay(day.date);
-            const dateLabel = formatDate(day.date);
+            const slots = {};
+            day.slots.forEach(function(slot) {
+                const h = parseInt(slot.start.split(':')[0]);
+                slots[h] = slot;
+            });
+            slotMap[day.date] = slots;
+        });
 
-            // Day card
+        // Render day cards with hourly blocks
+        data.dates.forEach(function(day) {
             const card = document.createElement('div');
-            card.className = 'p-4' + (isToday ? ' bg-blue-50' : '');
+            card.className = 'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden';
+
+            const today = new Date();
+            const dayDate = new Date(day.date + 'T00:00:00+07:00');
+            const isToday = day.date === toDateStr(today);
+            const isPast = dayDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
             // Day header
             const header = document.createElement('div');
-            header.className = 'flex items-center justify-between mb-3';
-            header.innerHTML = '<div><span class="text-xs text-gray-400">' + dayName + '</span>'
-                + '<span class="font-bold text-gray-800 ml-2">' + dateLabel + '</span>'
-                + (isToday ? '<span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">วันนี้</span>' : '')
-                + '</div>';
+            header.className = 'px-3 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between';
+            header.innerHTML = '<div><div class="font-bold text-gray-800 text-sm">' + formatDayShort(day.date) + '</div>'
+                + '<div class="text-xs text-gray-400">' + formatDate(day.date) + '</div></div>'
+                + (isToday ? '<span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">วันนี้</span>' : '');
             card.appendChild(header);
 
-            // Slots grid — 2 columns on mobile, 4 on desktop
+            // Hourly blocks: 09:00 to 17:00 (3 columns grid)
+            const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
             const grid = document.createElement('div');
-            grid.className = 'grid grid-cols-2 md:grid-cols-4 gap-2';
+            grid.className = 'grid grid-cols-3 gap-1.5 p-3';
 
-            day.slots.forEach(function(slot) {
-                const statusLabel = slot.label || slot.status;
-                let colorStyle = '';
-                let isBookable = slot.bookable;
+            HOURS.forEach(function(hour) {
+                const hourStr = String(hour).padStart(2, '0') + ':00';
+                const slot = (slotMap[day.date] || {})[hour];
 
-                if (slot.status === 'AVAILABLE') {
-                    colorStyle = 'background-color: #DBEAFE; color: #1E40AF;';
-                } else if (slot.status === 'RESERVED_UNPAID') {
-                    colorStyle = 'background-color: #64748B; color: white;';
-                } else if (slot.status === 'PAID_PENDING_CONFIRM') {
-                    colorStyle = 'background-color: #F59E0B; color: white;';
-                } else if (slot.status === 'CONFIRMED_PAID') {
-                    colorStyle = 'background-color: #16A34A; color: white;';
+                const block = document.createElement('div');
+                block.className = 'rounded-lg text-center transition-all border text-xs';
+
+                const isBookableHour = hour >= 9 && hour <= 15;
+                const isSlotBookable = slot && slot.bookable && isBookableHour;
+                const isSlotTaken = slot && !slot.bookable;
+                const isPastBlock = isPast && !isSlotTaken;
+
+                if (isSlotBookable && !isPastBlock) {
+                    block.className += ' bg-blue-50 border-blue-200 text-blue-700 cursor-pointer hover:bg-blue-100 hover:shadow hover:scale-105 active:scale-95';
+                    var slotStart = hourStr;
+                    var slotEnd = String(hour + 3).padStart(2, '0') + ':00';
+                    var label = hourStr + '–' + slotEnd;
+                    block.onclick = function(s, e, l) {
+                        return function() {
+                            openBookingModal(day.date, s, e, l);
+                        };
+                    }(slotStart, slotEnd, label);
+                    block.innerHTML = '<div class="font-bold py-2">' + hourStr + '</div>'
+                        + '<div class="text-[10px] pb-1.5 opacity-70">→ ' + slotEnd + '</div>';
+                } else if (!isBookableHour) {
+                    block.className += ' border-gray-100 text-gray-300 bg-gray-50';
+                    block.innerHTML = '<div class="font-bold py-2">' + hourStr + '</div>'
+                        + '<div class="text-[10px] pb-1.5">-</div>';
+                } else if (isPastBlock) {
+                    block.className += ' border-gray-100 text-gray-300 bg-gray-50';
+                    block.innerHTML = '<div class="font-bold py-2">' + hourStr + '</div>'
+                        + '<div class="text-[10px] pb-1.5">ปิด</div>';
+                } else if (isSlotTaken) {
+                    block.className += ' border-gray-200 text-gray-500 bg-gray-100 cursor-default';
+                    block.innerHTML = '<div class="font-bold py-2">' + hourStr + '</div>'
+                        + '<div class="text-[10px] pb-1.5">' + (slot.label || 'ไม่ว่าง') + '</div>';
                 }
 
-                let btnClass = 'rounded-lg p-2 text-xs font-medium transition-all text-center border border-transparent';
-                if (isBookable) {
-                    btnClass += ' cursor-pointer hover:shadow hover:border-blue-300 hover:scale-105 active:scale-95';
-                } else if (slot.status === 'AVAILABLE') {
-                    btnClass += ' cursor-default opacity-50';
-                } else {
-                    btnClass += ' cursor-default opacity-80';
-                }
-
-                let slotContent = '<div class="font-semibold">' + statusLabel + '</div>'
-                    + '<div class="opacity-75 mt-0.5">' + slot.start + '–' + slot.end + '</div>';
-
-                // Show "ปิด" for past/today available slots (read-only)
-                if (!isBookable && slot.status === 'AVAILABLE') {
-                    slotContent = '<div class="font-semibold">ปิด</div>'
-                        + '<div class="opacity-75 mt-0.5">' + slot.start + '–' + slot.end + '</div>';
-                }
-
-                const slotDiv = document.createElement('div');
-                slotDiv.className = btnClass;
-                slotDiv.setAttribute('style', colorStyle);
-                if (isBookable) {
-                    var slotTimeLabel = slot.start + '\u2013' + slot.end;
-                    slotDiv.setAttribute('onclick', "openBookingModal('" + day.date + "', '" + slot.start + "', '" + slot.end + "', '" + slotTimeLabel + "')");
-                }
-                slotDiv.innerHTML = slotContent;
-                grid.appendChild(slotDiv);
+                grid.appendChild(block);
             });
 
             card.appendChild(grid);
             container.appendChild(card);
         });
+
     } catch (e) {
         loading.textContent = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
         loading.style.display = 'block';
