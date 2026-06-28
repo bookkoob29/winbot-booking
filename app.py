@@ -42,13 +42,19 @@ app.mount("/uploads", StaticFiles(directory=str(config.UPLOAD_DIR)), name="uploa
 
 # --- Templates ---
 templates_dir = Path(__file__).parent / "templates"
-templates_dir.mkdir(exist_ok=True)
+templates_dir = Path(__file__).parent / "templates"
 (templates_dir / "admin").mkdir(exist_ok=True)
-templates = Jinja2Templates(directory=str(templates_dir))
 
-# Inject config into templates (disable cache to avoid Jinja2 hashing issues)
-templates.env.cache = None
-templates.env.globals.update(
+# Create Jinja2 environment directly (bypass Starlette's Jinja2Templates wrapper)
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+jinja_env = Environment(
+    loader=FileSystemLoader(str(templates_dir)),
+    autoescape=select_autoescape(["html", "xml"]),
+    cache_size=0,  # Disable template cache (avoids weakref/hashing issues)
+)
+
+# Inject config into templates
+jinja_env.globals.update(
     config=config,
     STATUS_LABELS=config.STATUS_LABELS,
     STATUS_COLORS=config.STATUS_COLORS,
@@ -56,6 +62,17 @@ templates.env.globals.update(
     SLOTS=config.SLOTS,
     BOOKING_PRICE=config.BOOKING_PRICE,
 )
+
+# Custom TemplateResponse that uses our jinja_env
+from starlette.templating import _TemplateResponse
+
+def render_template(request, name, context=None):
+    """Render a Jinja2 template and return a Starlette response."""
+    if context is None:
+        context = {}
+    context.setdefault("request", request)
+    template = jinja_env.get_template(name)
+    return _TemplateResponse(template, context)
 
 # --- Helpers ---
 
@@ -95,10 +112,7 @@ def get_admin_session(request: Request):
 async def landing_page(request: Request):
     """Landing page with hero, pricing, benefits."""
     try:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "today": get_today_str(),
-        })
+        return render_template(request, "index.html", {"today": get_today_str()})
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()
@@ -110,11 +124,7 @@ async def landing_page(request: Request):
 async def availability_page(request: Request):
     """Calendar availability page."""
     week_start, week_end = get_week_range()
-    return templates.TemplateResponse("availability.html", {
-        "request": request,
-        "week_start": week_start,
-        "week_end": week_end,
-    })
+    return render_template(request, "availability.html", {"week_start": week_start, "week_end": week_end})
 
 @app.get("/api/availability")
 async def api_availability(start_date: str = None, end_date: str = None):
@@ -207,15 +217,10 @@ async def booking_confirmation(request: Request, booking_id: str):
     """Booking confirmation page."""
     booking = db.get_booking(booking_id)
     if not booking:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "message": "ไม่พบรายการจองนี้",
-        }, status_code=404)
+        return render_template(request, "error.html")
 
     slips = db.get_slips(booking_id)
-    return templates.TemplateResponse("confirmation.html", {
-        "request": request,
-        "booking": dict(booking),
+    return render_template(request, "confirmation.html", {"booking": dict(booking),
         "slips": [dict(s) for s in slips],
     })
 
@@ -324,7 +329,7 @@ async def admin_login_page(request: Request):
     """Admin login page."""
     if request.session.get("admin_logged_in"):
         return RedirectResponse(url="/admin/dashboard", status_code=303)
-    return templates.TemplateResponse("admin/login.html", {"request": request})
+    return render_template(request, "admin/login.html")
 
 @app.post("/admin/login")
 async def admin_login(request: Request, passcode: str = Form(...)):
@@ -333,10 +338,7 @@ async def admin_login(request: Request, passcode: str = Form(...)):
         request.session["admin_logged_in"] = True
         request.session["admin_name"] = "Admin"
         return RedirectResponse(url="/admin/dashboard", status_code=303)
-    return templates.TemplateResponse("admin/login.html", {
-        "request": request,
-        "error": "รหัสผ่านไม่ถูกต้อง"
-    })
+    return render_template(request, "admin/login.html")
 
 @app.get("/admin/logout")
 async def admin_logout(request: Request):
@@ -354,8 +356,7 @@ async def admin_dashboard(request: Request, _admin=Depends(get_admin_session)):
     unpaid = db.get_bookings(status="RESERVED_UNPAID")
     all_bookings = db.get_bookings(limit=50)
 
-    return templates.TemplateResponse("admin/dashboard.html", {
-        "request": request,
+    return render_template(request, "admin/dashboard.html", {
         "today_bookings": [dict(b) for b in today_bookings],
         "pending_bookings": [dict(b) for b in pending],
         "unpaid_bookings": [dict(b) for b in unpaid],
@@ -388,16 +389,12 @@ async def admin_booking_detail(request: Request, booking_id: str, _admin=Depends
     """Admin booking detail page with slip preview."""
     booking = db.get_booking(booking_id)
     if not booking:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "message": "ไม่พบรายการจองนี้",
-        }, status_code=404)
+        return render_template(request, "error.html")
 
     slips = db.get_slips(booking_id)
     logs = db.get_activity_logs(booking_id, limit=50)
 
-    return templates.TemplateResponse("admin/booking_detail.html", {
-        "request": request,
+    return render_template(request, "admin/booking_detail.html", {
         "booking": dict(booking),
         "slips": [dict(s) for s in slips],
         "logs": [dict(l) for l in logs],
@@ -498,8 +495,7 @@ async def admin_activity_logs(request: Request, _admin=Depends(get_admin_session
     """View all activity logs with failed notifications."""
     logs = db.get_activity_logs(limit=200)
     failed = db.get_failed_notifications()
-    return templates.TemplateResponse("admin/activity_logs.html", {
-        "request": request,
+    return render_template(request, "admin/activity_logs.html", {
         "logs": [dict(l) for l in logs],
         "failed_logs": [dict(l) for l in failed],
     })
@@ -654,21 +650,11 @@ async def search_condo(q: str = ""):
 
 @app.exception_handler(404)
 async def not_found(request: Request, exc):
-    return templates.TemplateResponse("error.html", {
-        "request": request,
-        "message": "ไม่พบหน้าที่คุณต้องการ",
-    }, status_code=404)
+    return _TemplateResponse(jinja_env.get_template("error.html"), {"request": request, "message": "ไม่พบหน้าที่คุณต้องการ"}, status_code=404)
 
 @app.exception_handler(500)
 async def server_error(request: Request, exc):
-    try:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "message": "เกิดข้อผิดพลาดภายในระบบ",
-        }, status_code=500)
-    except Exception:
-        from starlette.responses import PlainTextResponse
-        return PlainTextResponse("เกิดข้อผิดพลาดภายในระบบ (Internal Server Error)", status_code=500)
+    return _TemplateResponse(jinja_env.get_template("error.html"), {"request": request, "message": "เกิดข้อผิดพลาดภายในระบบ"}, status_code=500)
 
 @app.exception_handler(Exception)
 async def generic_error(request: Request, exc):
