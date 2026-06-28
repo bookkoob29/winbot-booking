@@ -94,10 +94,17 @@ def get_admin_session(request: Request):
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
     """Landing page with hero, pricing, benefits."""
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "today": get_today_str(),
-    })
+    try:
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "today": get_today_str(),
+        })
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"LANDING ERROR: {e}\n{error_detail}")
+        from starlette.responses import PlainTextResponse
+        return PlainTextResponse(f"เกิดข้อผิดพลาด: {e}\n\n{error_detail}", status_code=500)
 
 @app.get("/availability", response_class=HTMLResponse)
 async def availability_page(request: Request):
