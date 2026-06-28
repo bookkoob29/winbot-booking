@@ -46,7 +46,7 @@ def is_valid_slot(slot_start, slot_end):
         if s["start"] == slot_start and s["end"] == slot_end:
             return True
     return False
-UNPAID_EXPIRY_MINUTES = int(os.environ.get("UNPAID_EXPIRY_MINUTES", "30"))
+UNPAID_EXPIRY_MINUTES = int(os.environ.get("UNPAID_EXPIRY_MINUTES", "2880"))  # 48 hours (2880 min)
 
 # --- Timezone ---
 TIMEZONE = "Asia/Bangkok"
